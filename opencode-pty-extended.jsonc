@@ -1,0 +1,333 @@
+{
+  // opencode-pty-extended wrapper configuration.
+  //
+  // This file is read by ../index.js on plugin load. Every config file found is
+  // deep-merged, lowest priority first (a later layer only overrides the keys it
+  // sets: nested objects merge, arrays/scalars replace):
+  //
+  //   1. this file (next to index.js) — the shipped reference defaults
+  //   2. <opencode config dir>/opencode-pty-extended.json[c]   (~/.config/opencode/)
+  //   3. project files, walking up from the session directory:
+  //        each ancestor's opencode-pty-extended.json[c], then each ancestor's
+  //        .opencode/opencode-pty-extended.json[c] (nearest ancestor wins; every
+  //        .opencode/ file outranks every non-.opencode/ one)
+  //   4. the plugin entry's `options` in opencode.jsonc
+  //
+  // Within a directory .json is read before .jsonc (.jsonc wins).
+  //
+  // Anything you omit falls back to the wrapper's built-in defaults.
+  //
+  // Every key documented here is also editable in the TUI with /pty-config
+  // (`PTY: configure` in the command palette): it shows provenance per key
+  // ([default|global|project|override]), lets you save to the global or a
+  // project config file (writing patches the raw file, comments survive), and
+  // hot-applies the saved values. Restart tiers (the dialog shows which per
+  // row): webserver-tier keys (port / hostname / terminalFont.* / webUi.*) Restart
+  // the PTY stack (soft keeps PTYs; `kill` kills them — a save whose touched
+  // keys are all webserver-tier soft-restarts without asking) and are also
+  // available anytime as the `pty_restart` tool or the /pty-restart command;
+  // the full-tier keys `autostart` and `tuiSidebar.initiallyHidden` (the
+  // one-way latch) additionally need OpenCode's own full /restart (never
+  // auto-restarted). tuiSidebar.enabled is a LIVE show/hide gate now (hidden
+  // = the section is not rendered while the plugin keeps loading; hot-applied
+  // in both directions). All remaining tuiSidebar.* / output.* / notify.* /
+  // argDefaults.* keys hot-apply: the server pushes a `settings` event after
+  // every live reload (apply / save / pty_refresh / pty_restart) and the
+  // sidebar re-pulls + re-renders immediately; the `pty_refresh` tool reloads
+  // the live config the same way without touching the web-UI server.
+
+  // ---------------------------------------------------------------------------
+  // port / hostname / autostart — passed straight to the opencode-pty plugin
+  // ---------------------------------------------------------------------------
+  // 0 = let the OS pick a free port, or a fixed port (e.g. 58858).
+  "port": 58858,
+
+  // Bind address for the PTY Web UI. "::1" is IPv6 loopback (shows as
+  // http://[::1]:port); use "127.0.0.1" or "localhost" for IPv4.
+  "hostname": "::1",
+
+  // Start the Web UI server as soon as the plugin loads.
+  "autostart": false,
+
+  // ---------------------------------------------------------------------------
+  // terminalFont — font for the PTY Web UI output area (.output-container + .xterm)
+  // ---------------------------------------------------------------------------
+  // The terminal font is hard-coded inside the package's bundled web JS, and
+  // the surrounding output panel (`.output-container`, see dist/web/index.html)
+  // has its own hard-coded rule. Both show the same content, so `terminalFont`
+  // styles the whole output area: the panel and the terminal it wraps.
+  //
+  // Omit this block (or set "enabled": false) to keep the package's own
+  // styling. `family` defaults to the stack shown; `size` and `lineHeight` are
+  // optional and only applied when present. Only the output area is affected —
+  // the sidebar, output header and the rest of the UI keep the package's own
+  // font.
+  //
+  // `family` is any CSS font stack; use \" to embed the quotes around a family
+  // name that contains spaces.
+  "terminalFont": {
+    "enabled": true,
+    "family": "'FiraCode Nerd Font Mono', 'SF Mono', 'Fira', 'Fira Code', 'Consolas', monospace",
+    "size": 14,
+    "lineHeight": 1
+  },
+
+  // ---------------------------------------------------------------------------
+  // argDefaults — optional-argument defaults for the pty tools
+  // ---------------------------------------------------------------------------
+  // These are the runtime defaults: when the agent omits an argument the wrapper
+  // fills in the value configured here (explicit arguments still win), and the
+  // JSON Schema the agent sees declares the same values.
+  // Override any value here; unknown tools/keys are ignored.
+  // A value of null/undefined (or 0 for "limit") is treated as "unset" and
+  // keeps the built-in default — which matches the values below.
+  // Note: `argDefaults.pty_spawn.notifyOnExit` also seeds the initial state of
+  // the web UI's "New PTY session" dialog "Notify on exit" toggle (v79).
+  "argDefaults": {
+    "pty_spawn": { "notifyOnExit": true, "notifyTarget": "spawner" },
+    "pty_read": { "offset": 0, "limit": 0, "ignoreCase": false },
+    "pty_kill": { "cleanup": false }
+  },
+
+  // ---------------------------------------------------------------------------
+  // notify — where a PTY's <pty_exited> notification is delivered
+  // ---------------------------------------------------------------------------
+  // When a PTY spawned with `notifyOnExit` exits, the wrapper prompts an
+  // opencode session with a `<pty_exited>` block (id, exit code, last line, ...).
+  // This sets the default recipient:
+  //
+  //   "spawner" — the session that called `pty_spawn` (the subagent, if one
+  //               triggered the spawn). The default: whoever started the process
+  //               is told when it finishes.
+  //   "root"    — the top-level conversation the PTY rolls up to. Useful when a
+  //               subagent should not be woken but the main session should.
+  //   "both"    — both, de-duplicated.
+  //
+  // A `pty_spawn` call can override this per spawn via its `notifyTarget`
+  // argument, and `argDefaults.pty_spawn.notifyTarget` sets the default the tool
+  // argument falls back to. Both `<pty_spawned>` and `<pty_exited>` also carry
+  // the initiator and root session ids.
+  "notify": {
+    "target": "spawner",
+    // Web-UI `+` spawns write a <pty_spawned> block into the target
+    // conversation's chat via a prompt; a global spawn announces to every open
+    // root conversation. false disables the announcements entirely.
+    "announceWebSpawn": true
+  },
+
+  // ---------------------------------------------------------------------------
+  // webUi — viewer resize, CSI 18t size queries, terminal kill keys, confirmations
+  // ---------------------------------------------------------------------------
+  // The PTY is spawned at a fixed 120x40 and normally never follows the browser
+  // window. These fixes (implemented in the wrapper, no node_modules edits) make
+  // the terminal behave like a real one:
+  //
+  //   "viewerResize" — the shipped web JS is rewritten so resizing the viewer
+  //                    re-fits the xterm and tells the backend to resize the
+  //                    real PTY (debounced by "debounceMs"). Set to false to
+  //                    keep the fixed-size behavior.
+  //   "csiReply"     — answer `ESC [ 18t` (device-size query, used by blessed)
+  //                    with `ESC [ 8 ; <rows> ; <cols> t` so apps stop hanging
+  //                    under ConPTY. Set to false to leave queries unanswered.
+  //   "ctrlCKillSession" — the shipped web JS treats Ctrl+C as "kill session"
+  //                    (same handler as the Kill Session button). When false
+  //                    (default) the served JS is rewritten so Ctrl+C is
+  //                    forwarded to the PTY as input (a real interrupt). Set to
+  //                    true to restore kill-on-Ctrl+C.
+  //   "ctrlDKillSession" — when true (default) the served JS is rewritten so
+  //                    Ctrl+D kills the session (with the usual confirmation).
+  //                    Set to false to stop Ctrl+D from killing.
+  //   "debugSize"    — when true (default) the served JS is rewritten so the
+  //                    web UI's debug line also shows the live terminal size
+  //                    (`size: <cols>x<rows>`). Set to false to leave the size
+  //                    off.
+  //   "killConfirmSession"  — when true (default) the header "Kill Session"
+  //                    button (and the Ctrl+D kill shortcut, which shares its
+  //                    handler) asks for confirmation before killing. Set to
+  //                    false to kill immediately.
+  //   "closeConfirmSession" — when true (default) the per-session × close
+  //                    button asks "Kill and remove session?". Set to false to
+  //                    close without asking. Either way the target card is
+  //                    grayed immediately on click (direct DOM) and un-grayed
+  //                    again on cancel / kill failure. Grouped headers
+  //                    (conversation groups / ↳ subagent sub-groups) reuse this
+  //                    gate for their own ×: it asks once for the whole group
+  //                    (up to 5 "title (id)" lines) and then kills + clears
+  //                    every PTY of that opencode conversation.
+  //   "groupBy" — groups the web UI sidebar's PTY sessions:
+  //                    false     -> the shipped flat list;
+  //                    "session" -> one header per opencode conversation,
+  //                                 headed by its title, id and PTY count;
+  //                    "agent"   -> as "session", and within each conversation
+  //                                 a sub-header per sub-session (subagent) that
+  //                                 spawned PTYs (default).
+  //                    Subagent PTYs roll up to the root conversation; PTYs with
+  //                    no opencode parent (created from the web UI itself) are
+  //                    shown ungrouped at the top. A legacy boolean
+  //                    `groupBySession` still works (true -> "session").
+  //   "stretchSessions" — when true (default) the sidebar's session cards
+  //                    stretch to fill the full sidebar width (upstream renders
+  //                    them as <button> elements, which shrink to their
+  //                    content). Set to false to keep the shrink-to-fit look.
+  //   "downloadLog"  — when true (default) the header gets a joined
+  //                    (Download|RAW|mode) split button left of "Kill Session".
+  //                    The mode segment (the "▾" part) opens a small menu that
+  //                    switches the *source* per PTY session (remembered in a
+  //                    JS var per session while the page is open):
+  //                      "Screen" (default) — serialize what the live xterm
+  //                                 currently holds: full scrollback + viewport.
+  //                                 "Download" = plain text, "RAW" = text with
+  //                                 ANSI colours (via the terminal's serialize
+  //                                 addon; falls back to the buffer rows).
+  //                      "Buffer" — the shipped server-side byte-stream ring:
+  //                                 "Download" = `/buffer/plain` (ANSI stripped),
+  //                                 "RAW" = `/buffer/raw`.
+  //                    Filenames carry the mode:
+  //                    `<title>-<ts>.screen[.raw].log` / `.buffer[.raw].log`.
+  //                    Set to false to remove the button.
+  //   "sizeControl"  — when true (default) a size bar sits below the terminal
+  //   "spawnButton"  — when true (default) the sidebar header carries a right
+  //                    aligned `+` button that opens a spawn popup (GLOBAL or a
+  //                    chosen opencode conversation + command + optional
+  //                    workdir). Created PTYs are announced in the target
+  //                    conversation's chat (notify.announceWebSpawn gates it;
+  //                    global spawns announce to every open root conversation).
+  //                    window: an "auto size | fixed size" segmented toggle and
+  //                    two textboxes (columns × rows). "auto" (default) keeps
+  //                    the viewer auto-fit and shows the LIVE size while the
+  //                    browser window resizes; "fixed" pins the PTY to an
+  //                    explicit size — editing the textboxes shows
+  //                    Apply/Cancel (Apply resizes the PTY immediately; Cancel
+  //                    restores the pre-edit numbers). PTYs spawned with
+  //                    `pty_spawn` cols/rows (or changed via the
+  //                    `pty_size_set` tool) load in "fixed" mode here. The
+  //                    backend fixed-size machinery always works; this only
+  //                    controls the visible bar.
+  //   "newPtyShowAllSessions" — when false (default) the spawn popup's session
+  //                    dropdown lists only LIVE sessions; true lists the full
+  //                    history. Live = the session is open in a TUI tab, or
+  //                    opened in the web UI (stamped by the page, heartbeat
+  //                    while it stays open), or is actively doing something
+  //                    (the fallback below, no UI needed), or owns a RUNNING
+  //                    PTY. Open/close is immediate: a closed tab / closed
+  //                    page stops being stamped and drops out after the
+  //                    server's ~3 min staleness — no grace window.
+  //   "newPtyActiveWindowMs" — the "actively doing something" window (ms) for
+  //                    sessions NOT open in any UI (default 180000 = 3 min).
+  //                    Based on the underlying `session_v2.time_updated`,
+  //                    which bumps every few seconds while an agent streams.
+  //   "reconnectIntervalMs" — web-UI auto-reconnect, ms between reconnect
+  //                    probes (default 2000). When the page's WebSocket to
+  //                    the PTY server DROPS (server recycle, restart,
+  //                    down-time), the injected watchdog — which only starts
+  //                    probing AFTER disconnect, never while connected —
+  //                    probes /ws at this interval and reloads the page as
+  //                    soon as the server answers (the fresh page re-lists,
+  //                    re-subscribes and rebuilds the terminal on its own).
+  //                    Reloads are limited to one per 15 s, so a flapping
+  //                    server cannot loop-reload. `0` or `false` disables
+  //                    the watchdog (nothing is injected) and restores the
+  //                    upstream behavior (the page stays dead until you
+  //                    reload manually).
+  "webUi": {
+    "viewerResize": { "enabled": true, "debounceMs": 120 },
+    "csiReply": true,
+    "ctrlCKillSession": false,
+    "ctrlDKillSession": true,
+    "debugSize": false,
+    "killConfirmSession": true,
+    "closeConfirmSession": true,
+    "groupBy": "agent",
+    "downloadLog": true,
+    "stretchSessions": true,
+    "sizeControl": true,
+    "spawnButton": true,
+    "newPtyShowAllSessions": false,
+    "newPtyActiveWindowMs": 180000,
+    "reconnectIntervalMs": 2000
+  },
+
+  // ---------------------------------------------------------------------------
+  // tuiSidebar — live PTY sessions in the OpenCode TUI sidebar
+  // ---------------------------------------------------------------------------
+  // The package ships no TUI surface, so the wrapper adds one (tui.tsx next to
+  // index.js). The server half registers RPC methods the sidebar calls, so no
+  // extra port or web server is required. The sidebar lists PTY sessions and
+  // adds palette/slash commands to view output and kill sessions
+  // (`/pty-output`, `/pty-kill`, `/pty-refresh`).
+  //
+  //   "enabled"         — register the sidebar. On by default; set false to
+  //                       remove it.
+  //   "pollMs"          — how often the list refreshes (ms).
+  //   "maxLines"        — cap on lines shown in the output dialog.
+  //   "filterBySession" — scope the sidebar and the `/pty-output` / `/pty-kill`
+  //                       pickers to the PTYs spawned by the opencode session
+  //                       currently in view, plus its subagent descendants
+  //                       (default true). Set false to list every PTY from every
+  //                       opencode session. With no current session id nothing
+  //                       is filtered. The `pty_list` tool follows the same idea
+  //                       for the agent (see below).
+  //                       Runtime override (NOT a config value): the
+  //                       `/pty-show-all-pty` slash command (no arg = toggle)
+  //                       and the `pty_show_all_pty` tool (read|on|off,
+  //                       default read) flip this visibility in memory only;
+  //                       the override resets to "follow config" whenever this
+  //                       key itself is changed via the dialog (apply/save).
+  //                       While show-all is active the sidebar attributes each
+  //                       PTY to its owning opencode session and dims foreign
+  //                       rows.
+  //   "groupBy"         — group the sidebar list, same values and meaning as
+  //                       `webUi.groupBy` (false | "session" | "agent",
+  //                       default "agent").
+  //   "initiallyHidden" — keep the whole PTY section out of the sidebar until
+  //                       the first PTY exists (default true). Once it has
+  //                       appeared it never hides again, even when the list
+  //                       becomes empty later. (Like the Todos)
+  //   "killConfirmSession" — show a confirmation dialog before killing a PTY
+  //                       from the TUI (right-click remove, group kill and
+  //                       `/pty-kill`; default true). Set false for one-way
+  //                       kills with no dialog.
+  //   Honoured from `plugins[].options` too: the server half merges all layers
+  //   and serves the result to the TUI half over RPC.
+  "tuiSidebar": {
+    "enabled": true,
+    "pollMs": 1500,
+    "maxLines": 400,
+    "filterBySession": true,
+    "groupBy": "agent",
+    "initiallyHidden": true,
+    "killConfirmSession": true
+  },
+
+  // ---------------------------------------------------------------------------
+  // output — how raw PTY output is rendered as text
+  // ---------------------------------------------------------------------------
+  // Raw PTY output carries ANSI escape sequences and control characters.
+  // Rendered verbatim the TUI interprets them (colors, cursor moves, ...) and
+  // the console can look broken — e.g. a captured last line of
+  // `ESC[K ESC[1;20H ESC[?25h` would scroll/repaint instead of showing. By
+  // default they are shown in caret notation instead — readable but inert
+  // (`ESC [ K` appears as `^[[K`, a carriage return as `\r`; real newlines and
+  // tabs are kept). Set `stripAnsiSequences` to true to drop the sequences
+  // entirely.
+  //
+  //   "stripAnsiSequences" — the `<pty_exited>` notification.
+  //   "dialog"             — the `/pty-output` dialog (independent of above).
+  //   "tool"               — the `pty_read` tool result. Unlike the two display
+  //                          scopes, false leaves it raw (the real bytes the
+  //                          agent asked for); true strips the sequences.
+  //
+  // These blocks are read from the server half's fully merged config over RPC,
+  // so `plugins[].options` in opencode.json(c) — the highest layer — applies
+  // here too, not just to the server-side features. Config files remain the
+  // fallback when the TUI half cannot reach the server.
+  //
+  // The dialog's dimensions are not configurable: it is centered and sized
+  // from the session's own terminal size (falling back to the terminal), capped
+  // at 80% of the screen and never smaller than a normal alert dialog.
+  "output": {
+    "stripAnsiSequences": true,
+    "dialog": { "stripAnsiSequences": true },
+    "tool": { "stripAnsiSequences": false }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "opencode-pty-extended",
+  "version": "1.16.0.92",
+  "type": "module",
+  "main": "index.js",
+  "description": "OpenCode PTY Extended",
+  "license": "MIT",
+  "author": {
+    "name": "Nabil Redmann / BananaAcid",
+    "email": "repo+opencode@bananaacid.de"
+  },
+  "dependencies": {
+    "opencode-pty": "0.4.0",
+    "@opentui/solid": "latest"
+  }
+}
