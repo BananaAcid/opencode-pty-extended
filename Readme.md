@@ -18,7 +18,7 @@ This wrapper exists to fix the original plugin's shortcomings, while extending i
 
 ### Use the cli
 ```bash
-opencode plugin add gist:e0374ff83a2d774d4cf8d76d54ea10da 
+opencode plugin add opencode-pty-extended 
 ```
 
 #### Config
@@ -26,7 +26,7 @@ Simple usable config, add to `opencode.jsonc`
 ```jsonc
 "plugins": [
     {
-        "package": "gist:e0374ff83a2d774d4cf8d76d54ea10da",
+        "package": "opencode-pty-extended",
         "options": {
             // fixed port - not random anymore
             "port": 58858,
@@ -57,7 +57,7 @@ Simple usable config, add to `opencode.jsonc`
 
 **Font**: you should use a **Nerd Font** variant, like `FiraMono Nerd Font` ([Nerd Font list/downloads](https://www.nerdfonts.com/font-downloads)) to ensure, you have all glyphs the terminal might need. 
 
-For all options [see below](#file-opencode-pty-extended-jsonc).
+For all options [see below](opencode-pty-extended.jsonc).
 
 #### Config sources
 
@@ -92,7 +92,7 @@ those keys in `cli.json`.
 
 ### Tell opencode to install
 ```
-read and install the plugin workaround from https://gist.github.com/BananaAcid/e0374ff83a2d774d4cf8d76d54ea10da
+read and install the plugin workaround from https://github.com/BananaAcid/opencode-pty-extended README.md
 ```
 
 
@@ -130,7 +130,7 @@ read and install the plugin workaround from https://gist.github.com/BananaAcid/e
 ... changing the config requires opencode "/restart" to reload the config
 
 **New features:**
-1. extra config file for any kind of settings, [see below](#file-opencode-pty-extended-jsonc)
+1. extra config file for any kind of settings, [see below](opencode-pty-extended.jsonc)
 2. config includes terminalFont family,size,lineheight to configure the TTY font
 3. fixed notifyOnExit to work with this v2 wrapper; the `argDefaults` in the config are applied at runtime (and reflected in the tool schema)
     - the exit notification (`<pty_exited>`) and the spawn result (`<pty_spawned>`) both carry the initiator and root opencode session ids (and the initiator agent)
