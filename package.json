@@ -1,6 +1,6 @@
 {
   "name": "opencode-pty-extended",
-  "version": "1.16.0.92",
+  "version": "1.16.92",
   "type": "module",
   "main": "index.js",
   "description": "OpenCode PTY Extended",
