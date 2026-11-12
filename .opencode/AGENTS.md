@@ -34,7 +34,7 @@ C:\Users\nabil\.cache\opencode\npm\git-e0374ff83a2d774d4cf8d76d54ea10da-03db31d5
 | `tui.tsx` | CLI half: sidebar slot, `/pty-output` `/pty-kill` `/pty-refresh`, pickers. |
 | `opencode-pty-extended.jsonc` | Shipped reference config (documents every option). |
 | `Readme.md` | User-facing description. |
-| `package.json` | `opencode-pty-extended` v1.14.0.43; deps `opencode-pty@0.4.0`, `@opentui/solid`. |
+| `package.json` | `opencode-pty-extended` v1.16.92; deps `opencode-pty@0.4.0`, `@opentui/solid`. |
 | `CHANGES.md` | The complete progress log (all `[implemented]`/`[bugfix]`/`[decision]`/`[verified]` history), moved out of this file. Append new entries there. |
 
 ---
@@ -211,10 +211,14 @@ C:\Users\nabil\.cache\opencode\npm\git-e0374ff83a2d774d4cf8d76d54ea10da-03db31d5
 
 ### Housekeeping
 
-- Bump `PATCH_VERSION` (**31** now) so the live web server recycles and serves the
+- Bump `PATCH_VERSION` (**92** now) so the live web server recycles and serves the
   new injected JS/HTML. **Every time `PATCH_VERSION` changes, update the last
-  part of `package.json` `"version"` to match it** (e.g. `PATCH_VERSION` 31 ⇔
-  `"version": "0.4.0.31"`). Keep them in lockstep.
+  part of `package.json` `"version"` to match it** — since 2026-11-13 the
+  version format is `1.16.<PATCH_VERSION>` (e.g. `PATCH_VERSION` 92 ⇔
+  `"version": "1.16.92"`). Keep them in lockstep. (Format history: the old
+  four-segment style `1.16.0.92` was dropped because npm only accepts valid
+  three-part semver — the `0.` segment made every publish-unready version an
+  invalid one.)
 - Update the named-export list at the bottom of `index.js` (verify-script surface).
 - Update `opencode-pty-extended.jsonc` docs and `Readme.md`.
 
@@ -226,7 +230,7 @@ C:\Users\nabil\.cache\opencode\npm\git-e0374ff83a2d774d4cf8d76d54ea10da-03db31d5
   folder (`C:\Users\nabil\.cache\opencode\npm\git-e0374ff83a2d774d4cf8d76d54ea10da-<hash>\node_modules\opencode-pty-extended`)
   to
   `D:\GitHub\opencode-pty-extended (gist)\opencode-pty-extended <current package version>.<timestamp>.7z`,
-  where `<timestamp>` is `YYYY-MM-DD HHmm` (e.g. `opencode-pty-extended 1.14.0.44.2026-10-30 1542.7z`).
+  where `<timestamp>` is `YYYY-MM-DD HHmm` (e.g. `opencode-pty-extended 1.16.92.2026-11-13 0002.7z`).
   Verify the archive was written (file exists + size > 0) before reporting done.
 
 ---
