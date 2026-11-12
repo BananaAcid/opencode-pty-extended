@@ -3,16 +3,13 @@
 This wrapper exists to fix the original plugin's shortcomings, while extending it. Original: [opencode-pty](https://github.com/shekohex/opencode-pty/) by [shekohex](https://github.com/shekohex).
 <br>You can build and debug full TUI applications (like plugins in OpenCode), including terminal resizing and mouse support.
 
-<img width="292" height="361" alt="image" src="https://gist.github.com/user-attachments/assets/0b74940f-ba6d-45e8-a2d9-8ba1c1f53a87" />
-<!--img width="305" height="704" alt="image" src="https://gist.github.com/user-attachments/assets/2c7893e3-4fd2-4a9f-bcce-024cc00bc54d" /-->
-<img width="300" height="685" alt="image" src="https://gist.github.com/user-attachments/assets/7b0f8373-25f9-4cfa-9540-ff89a578e378" />
-<!--img width="346" height="104" alt="image" src="https://gist.github.com/user-attachments/assets/c507f654-0720-451a-b2e0-c2a3b10b62fc" /-->
-<img width="325" height="119" alt="image" src="https://gist.github.com/user-attachments/assets/12ff7bbf-f157-4de2-9a51-b6c681c7510f" />
-<img width="433" height="175" alt="image" src="https://gist.github.com/user-attachments/assets/6de000e5-74b9-4bd0-983f-0e83b51f2cc5" />
-<img width="817" height="201" alt="image" src="https://gist.github.com/user-attachments/assets/5959093f-0b14-4349-920d-9e7bd45da4a7" />
-<img width="816" height="800" alt="image" src="https://gist.github.com/user-attachments/assets/d7bc4efb-6c83-4656-9646-6323b5c6c61d" />
-<img width="585" height="289" alt="image" src="https://gist.github.com/user-attachments/assets/985c5fe5-e738-4889-9cd8-7085e4c53cfb" />
-
+<img width="292" height="361" alt="690280742-0b74940f-ba6d-45e8-a2d9-8ba1c1f53a87" src="https://github.com/user-attachments/assets/79481c73-8a32-413d-af9f-e74a93474c25" />
+<img width="300" height="685" alt="693039222-7b0f8373-25f9-4cfa-9540-ff89a578e378" src="https://github.com/user-attachments/assets/a33b7400-efaa-498a-b0ad-987c696e2fce" />
+<img width="325" height="119" alt="693019411-12ff7bbf-f157-4de2-9a51-b6c681c7510f" src="https://github.com/user-attachments/assets/1d93171d-9f63-4f92-9920-d69cc78258a6" />
+<img width="433" height="175" alt="690247052-6de000e5-74b9-4bd0-983f-0e83b51f2cc5" src="https://github.com/user-attachments/assets/be88bc04-98fa-46a2-accd-206a9fcea6cd" />
+<img width="817" height="201" alt="691146021-5959093f-0b14-4349-920d-9e7bd45da4a7" src="https://github.com/user-attachments/assets/51f13657-8b45-4c2c-b88d-b62e8b05db25" />
+<img width="816" height="800" alt="692920668-d7bc4efb-6c83-4656-9646-6323b5c6c61d" src="https://github.com/user-attachments/assets/26b8713f-afcc-4cce-9115-ddf015815975" />
+<img width="585" height="289" alt="692713074-985c5fe5-e738-4889-9cd8-7085e4c53cfb" src="https://github.com/user-attachments/assets/25a12dfe-15bf-4c73-a116-15508928ead7" />
 
 ## Install
 
