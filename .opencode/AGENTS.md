@@ -13,19 +13,24 @@ published `opencode-pty` package (v0.4.0) usable and extends it. It does **not**
 edit `node_modules/opencode-pty`; everything is done by wrapping the package's
 modules at runtime from this directory.
 
-- Loaded as an OpenCode v2 **server plugin** via `gist:e0374ff83a2d774d4cf8d76d54ea10da`
-  (declared in `~/.config/opencode/opencode.jsonc`).
-- OpenCode clones the gist into an npm git-cache dir; the current directory **is**
-  that checkout. Edits here are the loaded copy, but are overwritten when OpenCode
-  reinstalls the gist. The **gist is the source of truth** — changes here must be
-  synced back to the gist by the user.
+- Loaded as an OpenCode v2 **server plugin** from **npmjs** (`opencode-pty-extended`
+  package, declared in `~/.config/opencode/opencode.jsonc`; formerly loaded via a
+  gist install, `gist:e0374ff83a2d774d4cf8d76d54ea10da`).
+- OpenCode caches the npm package under its npm cache; that checkout is the
+  **loaded copy** (development/debugging edits go there and are overwritten when
+  OpenCode reinstalls the package). The **repo dir is the deployment source of
+  truth** — changes made in the cache copy must be synced back to the repo (and
+  published to npm) by the user.
 - `tui.tsx` is the separate **CLI plugin** half (OpenTUI sidebar), loaded from the
   same package.
 
 ### Files
 
-Workdir:
-C:\Users\nabil\.cache\opencode\npm\git-e0374ff83a2d774d4cf8d76d54ea10da-03db31d52c8e\<date-time>\node_modules\opencode-pty-extended
+Loaded-copy workdir (npmjs install):
+C:\Users\nabil\.cache\opencode\npm\opencode-pty-extended@latest\<date-time>\node_modules\opencode-pty-extended
+
+Deployment code (repo):
+D:\GitHub\opencode-pty-extended (gist)\repo
 
 | File | Role |
 |---|---|
@@ -227,7 +232,7 @@ C:\Users\nabil\.cache\opencode\npm\git-e0374ff83a2d774d4cf8d76d54ea10da-03db31d5
 - **7-Zip is installed** at `C:\Program Files\7-Zip\7z.exe` (not on `PATH` — call
   it with the full path or add it when needed).
 - When asked to create a backup: 7z the **current workdir's** `opencode-pty-extended`
-  folder (`C:\Users\nabil\.cache\opencode\npm\git-e0374ff83a2d774d4cf8d76d54ea10da-<hash>\node_modules\opencode-pty-extended`)
+  folder (`C:\Users\nabil\.cache\opencode\npm\opencode-pty-extended@latest\<date-time>\node_modules\opencode-pty-extended`)
   to
   `D:\GitHub\opencode-pty-extended (gist)\opencode-pty-extended <current package version>.<timestamp>.7z`,
   where `<timestamp>` is `YYYY-MM-DD HHmm` (e.g. `opencode-pty-extended 1.16.92.2026-11-13 0002.7z`).
